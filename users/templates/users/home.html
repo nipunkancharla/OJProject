@@ -1,0 +1,17 @@
+<!-- users/templates/users/home.html -->
+{% extends "users/base.html" %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold">Welcome to the Site!</h1>
+        {% if user.is_authenticated %}
+            <p class="col-md-8 fs-4">You are logged in as <strong>{{ user.username }}</strong>. You can now access all the protected content.</p>
+        {% else %}
+            <p class="col-md-8 fs-4">Please log in or sign up to continue.</p>
+            <a class="btn btn-primary btn-lg" href="{% url 'login' %}" role="button">Login</a>
+            <a class="btn btn-secondary btn-lg" href="{% url 'signup' %}" role="button">Sign Up</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}
