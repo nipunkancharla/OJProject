@@ -1,4 +1,5 @@
 <!-- users/templates/users/base.html -->
+ {% load static %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -11,7 +12,8 @@
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'home' %}">Auth System</a>
+            <a class="navbar-brand d-flex align-items-center" href="{% url 'problem-list' %}">
+                <img src="{% static 'images/logo.avif' %}" alt="Logo" width="30" height="30" class="me-2">Online Judge</a>
             <div class="d-flex">
                 {% if user.is_authenticated %}
                     <span class="navbar-text me-3">
