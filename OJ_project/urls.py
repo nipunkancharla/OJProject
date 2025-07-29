@@ -21,6 +21,6 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('users.urls')),
-    # The root URL of our site will now be handled by the problemset app
+    path('workspace/', include('workspace.urls')), # Add this line
     path('', include('problemset.urls')),
 ]

@@ -1,0 +1,235 @@
+<!-- workspace/templates/workspace/solver.html -->
+{% extends "users/base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <!-- Left Pane: Problem Description -->
+        <div class="col-md-5">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header">
+                    <h4>{{ problem.title }}</h4>
+                </div>
+                <div class="card-body" style="max-height: 80vh; overflow-y: auto;">
+                    <p>{{ problem.description|linebreaks }}</p>
+                    <hr>
+                    <h5>Sample Test Cases</h5>
+                    {% for tc in sample_testcases %}
+                        <div class="mb-3">
+                            <strong>Input:</strong>
+                            <pre class="bg-light p-2 rounded"><code>{{ tc.input_data }}</code></pre>
+                            <strong>Output:</strong>
+                            <pre class="bg-light p-2 rounded"><code>{{ tc.expected_output }}</code></pre>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No sample test cases have been added for this problem yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Pane: Code Editor and I/O -->
+        <div class="col-md-7">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <label for="languageSelect" class="form-label mb-0 me-2">Language:</label>
+                        <select id="languageSelect" class="form-select-sm">
+                            <option value="python">Python</option>
+                            <option value="cpp">C++</option>
+                            <option value="java">Java</option>
+                        </select>
+                    </div>
+                    <div>
+                        <!-- Add ID and data-bs-toggle for modal -->
+                        <button id="history-btn" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#historyModal">History</button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="editor" style="height: 500px; width: 100%;"></div>
+                </div>
+                <div class="card-footer d-flex justify-content-end">
+                    <button id="run-btn" class="btn btn-info me-2">Run</button>
+                    <button id="submit-btn" class="btn btn-success">Submit</button>
+                </div>
+            </div>
+             <!-- Custom Input Box -->
+             <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h5>Custom Input</h5>
+                </div>
+                <div class="card-body">
+                    <textarea id="custom-input-box" class="form-control" rows="4" placeholder="Enter custom input here...">{% if sample_testcases %}{{ sample_testcases.0.input_data }}{% endif %}</textarea>
+                </div>
+            </div>
+             <!-- Output Box -->
+             <div class="card shadow-sm mt-3">
+                <div class="card-header">
+                    <h5>Output</h5>
+                </div>
+                <div class="card-body">
+                    <pre id="output-box" class="bg-dark text-white p-2 rounded" style="min-height: 100px;">Click "Run" to see output here...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- NEW: History Modal -->
+<div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="historyModalLabel">Submission History for {{ problem.title }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table">
+            <thead>
+                <tr><th>Status</th><th>Language</th><th>Time</th></tr>
+            </thead>
+            <tbody id="history-table-body">
+                <!-- History rows will be inserted here by JavaScript -->
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ACE Editor & JavaScript -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+<script>
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/monokai");
+    editor.session.setMode("ace/mode/python");
+    editor.setFontSize(14);
+
+    document.getElementById('languageSelect').addEventListener('change', function() {
+        var language = this.value;
+        if (language === 'cpp') {
+            editor.session.setMode("ace/mode/c_cpp");
+        } else {
+            editor.session.setMode("ace/mode/" + language);
+        }
+    });
+
+    const runBtn = document.getElementById('run-btn');
+    const outputBox = document.getElementById('output-box');
+    const languageSelect = document.getElementById('languageSelect');
+    const customInputBox = document.getElementById('custom-input-box');
+
+    runBtn.addEventListener('click', function() {
+        const code = editor.getValue();
+        const language = languageSelect.value;
+        const inputData = customInputBox.value;
+
+        outputBox.textContent = 'Running...';
+        runBtn.disabled = true;
+
+        fetch("{% url 'run-code' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                code: code,
+                language: language,
+                input: inputData
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.stdout) {
+                outputBox.textContent = data.stdout;
+            } else if (data.stderr) {
+                outputBox.textContent = "Error:\n" + data.stderr;
+            } else if (data.compile_output) {
+                outputBox.textContent = "Compilation Error:\n" + data.compile_output;
+            } else if (data.error) {
+                outputBox.textContent = "An error occurred: " + data.error;
+            } else {
+                outputBox.textContent = "Execution finished with no output.";
+            }
+        })
+        .catch(error => {
+            outputBox.textContent = 'An unexpected error occurred. See console for details.';
+            console.error('Error:', error);
+        })
+        .finally(() => {
+            runBtn.disabled = false;
+        });
+    });
+
+    // --- NEW JAVASCRIPT FOR SUBMIT AND HISTORY ---
+    const submitBtn = document.getElementById('submit-btn');
+    const historyBtn = document.getElementById('history-btn');
+    const historyTableBody = document.getElementById('history-table-body');
+    const problemSlug = "{{ problem.slug }}";
+
+    // --- SUBMIT BUTTON LOGIC ---
+    submitBtn.addEventListener('click', function() {
+        const code = editor.getValue();
+        const language = languageSelect.value;
+
+        outputBox.innerHTML = `
+            <div class="d-flex align-items-center">
+              <strong>Submitting...</strong>
+              <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+            </div>`;
+        submitBtn.disabled = true;
+        runBtn.disabled = true;
+
+        fetch(`/workspace/api/submit/${problemSlug}/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: code, language: language })
+        })
+        .then(response => response.json())
+        .then(data => {
+            let statusClass = 'text-success';
+            if (data.status !== 'Accepted') {
+                statusClass = 'text-danger';
+            }
+            outputBox.innerHTML = `<strong class="${statusClass}">${data.status}</strong><br>${data.message || ''}`;
+        })
+        .catch(error => {
+            outputBox.textContent = 'An unexpected error occurred during submission.';
+            console.error('Submit Error:', error);
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            runBtn.disabled = false;
+        });
+    });
+
+    // --- HISTORY BUTTON LOGIC ---
+    historyBtn.addEventListener('click', function() {
+        historyTableBody.innerHTML = '<tr><td colspan="3">Loading history...</td></tr>';
+
+        fetch(`/workspace/api/history/${problemSlug}/`)
+        .then(response => response.json())
+        .then(data => {
+            historyTableBody.innerHTML = ''; // Clear loading message
+            if (data.length === 0) {
+                historyTableBody.innerHTML = '<tr><td colspan="3">No submissions found.</td></tr>';
+                return;
+            }
+            data.forEach(sub => {
+                let statusClass = sub.status === 'Accepted' ? 'text-success' : 'text-danger';
+                let row = `<tr>
+                               <td><strong class="${statusClass}">${sub.status}</strong></td>
+                               <td>${sub.language}</td>
+                               <td>${sub.submitted_at}</td>
+                           </tr>`;
+                historyTableBody.innerHTML += row;
+            });
+        })
+        .catch(error => {
+            historyTableBody.innerHTML = '<tr><td colspan="3">Failed to load history.</td></tr>';
+            console.error('History Error:', error);
+        });
+    });
+</script>
+{% endblock content %}

@@ -23,7 +23,8 @@
                             <th scope="row">{{ forloop.counter }}</th>
                             <td>
                                 <!-- For now, this link goes nowhere -->
-                                <a href="#" class="text-decoration-none">{{ problem.title }}</a>
+                                <a href="{% url 'solve-workspace' problem.slug %}" class="text-decoration-none">{{ problem.title }}</a>
+
                             </td>
                             <td>
                                 {% if problem.difficulty == 'Easy' %}

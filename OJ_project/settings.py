@@ -10,11 +10,18 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv() # This line loads the .env file
+
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Now, read the key from the environment and store it in a settings variable
+RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -39,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'users',  # Custom user app
     'problemset',
+    'workspace',  # Workspace app for code execution
 ]
 
 MIDDLEWARE = [

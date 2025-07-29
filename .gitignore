@@ -1,0 +1,11 @@
+# .gitignore
+
+# Environment variables
+.env
+
+# Django database file
+db.sqlite3
+
+# Virtual environment folder
+ojenv/
+__pycache__/
