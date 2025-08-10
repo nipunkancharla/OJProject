@@ -30,9 +30,10 @@ RAPIDAPI_KEY = os.environ.get('RAPIDAPI_KEY')
 SECRET_KEY = 'django-insecure-%rjykkkn_xb16@i@w2c))9^1wi_g!w8(yo*^!41)*tja!^&u(z'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+# Reads the allowed hosts from the .env file and splits it into a list
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
 
 # Application definition
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
     'users',  # Custom user app
     'problemset',
     'workspace',  # Workspace app for code execution
+    'compiler',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,46 @@
+<!-- compiler/templates/compiler/test_page.html -->
+{% extends "users/base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Compiler Test Page</h1>
+    <p>This is a standalone page for developing and testing the custom code execution engine.</p>
+
+    <form method="post" action="{% url 'compiler-test-page' %}">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Left side: Code and Input -->
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label for="language" class="form-label">Language</label>
+                    <select name="language" id="language" class="form-select w-25">
+                        <option value="python" {% if language == 'python' %}selected{% endif %}>Python</option>
+                        <option value="cpp" {% if language == 'cpp' %}selected{% endif %}>C++</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="code" class="form-label">Source Code</label>
+                    <textarea name="code" id="code" class="form-control" rows="15" required>{{ code }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="input_data" class="form-label">Standard Input (stdin)</label>
+                    <textarea name="input_data" id="input_data" class="form-control" rows="5">{{ input_data }}</textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Run Code</button>
+            </div>
+
+            <!-- Right side: Output -->
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="output" class="form-label">Output</label>
+                    <pre id="output" class="bg-dark text-white p-3 rounded" style="min-height: 400px;">{{ output }}</pre>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock content %}
+    

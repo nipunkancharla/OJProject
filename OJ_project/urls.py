@@ -21,6 +21,7 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('users.urls')),
-    path('workspace/', include('workspace.urls')), # Add this line
+    path('workspace/', include('workspace.urls')),
+    path('compiler/', include('compiler.urls')), # Add this line
     path('', include('problemset.urls')),
 ]
