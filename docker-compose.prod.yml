@@ -1,0 +1,36 @@
+# docker-compose.prod.yml
+
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      args:
+        # Replace 999 with the GID you found with 'getent group docker'
+        DOCKER_GID: 992
+    command: gunicorn OJ_project.wsgi:application --workers 4  --bind 0.0.0.0:8000
+    volumes:
+      - static_volume:/home/app/staticfiles
+      - /var/run/docker.sock:/var/run/docker.sock
+      # --- ADD THIS LINE ---
+      # Mount the host's /tmp into the container's /tmp for shared temp files
+      - /tmp:/tmp
+    expose:
+      - 8000
+    env_file:
+      - .env
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - static_volume:/home/app/staticfiles
+    depends_on:
+      - web
+
+volumes:
+  static_volume:

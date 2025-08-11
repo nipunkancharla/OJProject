@@ -13,8 +13,7 @@ def _execute_code_in_docker(code, language, input_data):
     A helper function that runs code in a Docker container and returns the result.
     This is the core execution logic.
     """
-    # Create a unique, OS-appropriate temporary directory
-    temp_dir = tempfile.mkdtemp()
+    temp_dir = tempfile.mkdtemp(dir="/tmp")
     temp_dir_path = Path(temp_dir)
     output = {}
 
@@ -22,15 +21,24 @@ def _execute_code_in_docker(code, language, input_data):
         if language == 'python':
             file_name = "main.py"
             (temp_dir_path / file_name).write_text(code)
-            command = ['docker', 'run', '--rm', '--volume', f'{temp_dir_path}:/app', '--memory=256m', '--cpus=0.5', 'python:3.11-slim', 'python', f'/app/{file_name}']
+            # --- THE FIX IS HERE: Add the '-i' flag ---
+            command = ['docker', 'run', '-i', '--rm', '--volume', f'{temp_dir_path}:/app', '--memory=256m', '--cpus=0.5', 'python:3.11-slim', 'python', f'/app/{file_name}']
         elif language == 'cpp':
             file_name = "main.cpp"
             (temp_dir_path / file_name).write_text(code)
-            command = ['docker', 'run', '--rm', '--volume', f'{temp_dir_path}:/app', '--memory=512m', '--cpus=0.5', 'gcc:latest', 'sh', '-c', f'g++ /app/{file_name} -o /app/program && /app/program']
+            # --- THE FIX IS HERE: Add the '-i' flag ---
+            command = ['docker', 'run', '-i', '--rm', '--volume', f'{temp_dir_path}:/app', '--memory=512m', '--cpus=0.5', 'gcc:latest', 'sh', '-c', f'g++ /app/{file_name} -o /app/program && /app/program']
         else:
             return {'error': 'Unsupported language'}
 
-        result = subprocess.run(command, input=input_data, capture_output=True, text=True, timeout=10)
+        # We use text=True to let subprocess handle encoding/decoding
+        result = subprocess.run(
+            command,
+            input=input_data,
+            capture_output=True,
+            text=True, # This handles encoding automatically
+            timeout=10
+        )
 
         if result.returncode == 0:
             output['stdout'] = result.stdout
@@ -61,7 +69,7 @@ def compiler_test_page(request):
 
     return render(request, 'compiler/test_page.html', context)
 
-# New API view for our workspace to call
+# API view for our workspace to call
 @csrf_exempt
 def execute_code_api(request):
     if request.method == 'POST':
