@@ -18,10 +18,21 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+# --- ADD THESE IMPORTS ---
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('users.urls')),
     path('workspace/', include('workspace.urls')),
-    path('compiler/', include('compiler.urls')), # Add this line
-    path('', include('problemset.urls')),
+    path('compiler/', include('compiler.urls')),
+    path('problems/', include('problemset.urls')),
+    path('', include('core.urls')),
 ]
+
+
+# --- ADD THIS LINE AT THE END ---
+# This tells Django to serve media files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

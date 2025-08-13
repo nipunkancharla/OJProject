@@ -8,16 +8,20 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
-def _execute_code_in_docker(code, language, input_data):
+def _execute_code_in_docker(code, language, input_data_path, expected_output_path=None):
     """
     A helper function that runs code in a Docker container and returns the result.
-    This is the core execution logic.
+    It now accepts file paths instead of raw data.
     """
     temp_dir = tempfile.mkdtemp(dir="/tmp")
     temp_dir_path = Path(temp_dir)
     output = {}
-
+    
     try:
+        # --- NEW: Read input data from the file ---
+        with open(input_data_path, 'r') as f:
+            input_data = f.read()   
+
         if language == 'python':
             file_name = "main.py"
             (temp_dir_path / file_name).write_text(code)
@@ -69,18 +73,29 @@ def compiler_test_page(request):
 
     return render(request, 'compiler/test_page.html', context)
 
-# API view for our workspace to call
+# --- UPDATE THE execute_code_api VIEW ---
 @csrf_exempt
 def execute_code_api(request):
+    # This view is now only for the "Run" button with custom input
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
             code = data.get('code')
             language = data.get('language')
-            input_data = data.get('input')
+            input_data = data.get('input') # This is raw text from the user
 
-            result = _execute_code_in_docker(code, language, input_data)
+            # Create a temporary file for the custom input
+            with tempfile.NamedTemporaryFile(mode='w+', delete=False, dir='/tmp') as temp_input_file:
+                temp_input_file.write(input_data)
+                temp_input_file_path = temp_input_file.name
+            
+            result = _execute_code_in_docker(code, language, temp_input_file_path)
+            
+            # Clean up the temporary file
+            os.remove(temp_input_file_path)
+
             return JsonResponse(result)
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+

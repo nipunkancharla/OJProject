@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'problemset',
     'workspace',  # Workspace app for code execution
     'compiler',
+    'core',
 ]
 
 MIDDLEWARE = [
@@ -132,11 +133,17 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# This is the URL that will serve the media files
+MEDIA_URL = '/media/'
+# This is the directory where uploaded files will be stored
+MEDIA_ROOT = BASE_DIR / 'media'
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
 
 
 LOGIN_REDIRECT_URL = '/'

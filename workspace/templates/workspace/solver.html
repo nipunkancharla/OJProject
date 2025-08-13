@@ -15,12 +15,14 @@
                     <p>{{ problem.description|linebreaks }}</p>
                     <hr>
                     <h5>Sample Test Cases</h5>
-                    {% for tc in sample_testcases %}
+                    
+                    <!-- UPDATED LOOP: Use the new context variable -->
+                    {% for tc_content in sample_testcases_content %}
                         <div class="mb-3">
                             <strong>Input:</strong>
-                            <pre class="bg-light p-2 rounded"><code>{{ tc.input_data }}</code></pre>
+                            <pre class="bg-light p-2 rounded"><code>{{ tc_content.input }}</code></pre>
                             <strong>Output:</strong>
-                            <pre class="bg-light p-2 rounded"><code>{{ tc.expected_output }}</code></pre>
+                            <pre class="bg-light p-2 rounded"><code>{{ tc_content.output }}</code></pre>
                         </div>
                     {% empty %}
                         <p class="text-muted">No sample test cases have been added for this problem yet.</p>
@@ -42,7 +44,6 @@
                         </select>
                     </div>
                     <div>
-                        <!-- Add ID and data-bs-toggle for modal -->
                         <button id="history-btn" class="btn btn-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#historyModal">History</button>
                     </div>
                 </div>
@@ -60,7 +61,8 @@
                     <h5>Custom Input</h5>
                 </div>
                 <div class="card-body">
-                    <textarea id="custom-input-box" class="form-control" rows="4" placeholder="Enter custom input here...">{% if sample_testcases %}{{ sample_testcases.0.input_data }}{% endif %}</textarea>
+                    <!-- UPDATED PRE-FILL LOGIC: Use the new context variable -->
+                    <textarea id="custom-input-box" class="form-control" rows="4" placeholder="Enter custom input here...">{% if sample_testcases_content %}{{ sample_testcases_content.0.input }}{% endif %}</textarea>
                 </div>
             </div>
              <!-- Output Box -->
@@ -76,7 +78,7 @@
     </div>
 </div>
 
-<!-- NEW: History Modal -->
+<!-- History Modal -->
 <div class="modal fade" id="historyModal" tabindex="-1" aria-labelledby="historyModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -98,7 +100,7 @@
   </div>
 </div>
 
-<!-- ACE Editor & JavaScript -->
+<!-- ACE Editor & JavaScript (No changes needed in the script itself) -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
 <script>
     var editor = ace.edit("editor");
@@ -162,13 +164,11 @@
         });
     });
 
-    // --- NEW JAVASCRIPT FOR SUBMIT AND HISTORY ---
     const submitBtn = document.getElementById('submit-btn');
     const historyBtn = document.getElementById('history-btn');
     const historyTableBody = document.getElementById('history-table-body');
     const problemSlug = "{{ problem.slug }}";
 
-    // --- SUBMIT BUTTON LOGIC ---
     submitBtn.addEventListener('click', function() {
         const code = editor.getValue();
         const language = languageSelect.value;
@@ -204,7 +204,6 @@
         });
     });
 
-    // --- HISTORY BUTTON LOGIC ---
     historyBtn.addEventListener('click', function() {
         historyTableBody.innerHTML = '<tr><td colspan="3">Loading history...</td></tr>';
 
