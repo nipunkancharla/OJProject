@@ -129,16 +129,11 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-# Add this line to tell Django where to find your static files
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# This is the URL that will serve the media files
-MEDIA_URL = '/media/'
-# This is the directory where uploaded files will be stored
-MEDIA_ROOT = BASE_DIR / 'media'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
 # Default primary key field type
