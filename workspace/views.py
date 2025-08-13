@@ -6,6 +6,7 @@ from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
+from django.core.files.base import ContentFile
 from problemset.models import Problem
 from .models import Submission
 
@@ -65,12 +66,29 @@ def submit_code(request, problem_slug):
 
     try:
         data = json.loads(request.body)
-        code = data.get('code')
+        code_text = data.get('code') # Get the raw code as text
         language = data.get('language')
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-    submission = Submission.objects.create(user=request.user, problem=problem, code=code, language=language, status='Pending')
+    # --- NEW LOGIC: Save code to a file first ---
+    # Create a Django ContentFile from the code text
+    code_file = ContentFile(code_text.encode('utf-8'))
+
+    # Create a new Submission instance but don't save it to DB yet
+    submission = Submission(
+        user=request.user, 
+        problem=problem, 
+        language=language, 
+        status='Pending'
+    )
+
+    # Save the ContentFile to the 'code' FileField
+    # This will automatically use our 'get_submission_path' function
+    file_name = f"submission.{language}"
+    submission.code.save(file_name, code_file, save=True)
+    # Now the submission object is fully saved in the database
+    # --- END NEW LOGIC ---
 
     try:
         with problem.test_case_file.open('r') as f:
@@ -89,7 +107,8 @@ def submit_code(request, problem_slug):
 
         result_data = {}
         try:
-            result_data = _execute_code_in_docker(code, language, temp_input_file_path)
+            # We now pass the raw code text to the execution engine
+            result_data = _execute_code_in_docker(code_text, language, temp_input_file_path)
         finally:
             os.remove(temp_input_file_path)
 
@@ -115,8 +134,34 @@ def submit_code(request, problem_slug):
 
 @login_required
 def get_submission_history(request, problem_slug):
-    # ... (This view is unchanged)
     problem = get_object_or_404(Problem, slug=problem_slug)
     submissions = Submission.objects.filter(user=request.user, problem=problem).order_by('-submitted_at')
-    data = [{'status': s.status, 'language': s.language, 'submitted_at': s.submitted_at.strftime('%Y-%m-%d %H:%M:%S')} for s in submissions]
+
+    # We now include the submission ID in the data
+    data = [{
+        'id': s.id, # Add the ID
+        'status': s.status,
+        'language': s.language,
+        'submitted_at': s.submitted_at.strftime('%Y-%m-%d %H:%M:%S')
+    } for s in submissions]
+
     return JsonResponse(data, safe=False)
+
+# --- ADD THIS NEW VIEW ---
+@login_required
+def get_submission_details(request, submission_id):
+    # Find the submission, ensuring it belongs to the current user for security
+    submission = get_object_or_404(Submission, id=submission_id, user=request.user)
+
+    try:
+        with submission.code.open('r') as f:
+            code_content = f.read()
+    except IOError:
+        return JsonResponse({'error': 'Could not read submission file.'}, status=500)
+
+    data = {
+        'code': code_content,
+        'language': submission.language,
+    }
+
+    return JsonResponse(data)
