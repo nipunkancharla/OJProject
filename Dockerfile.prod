@@ -1,4 +1,4 @@
-# Dockerfile.prod (Final Corrected Version)
+# Dockerfile.prod (Final Version with root user)
 
 # --- Build Stage ---
 FROM python:3.11-slim AS builder
@@ -6,13 +6,17 @@ FROM python:3.11-slim AS builder
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 WORKDIR /app
+
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+
 COPY . /app/
+
 ARG DUMMY_SECRET_KEY=temporary_secret_key_for_build
 ENV SECRET_KEY=${DUMMY_SECRET_KEY}
 ENV DEBUG=False
 ENV ALLOWED_HOSTS=localhost
+
 RUN python manage.py collectstatic --noinput
 
 
@@ -22,33 +26,27 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 
-# Accept the Docker GID as a build argument
-ARG DOCKER_GID
-
-# Create a 'docker' group with the specific GID from the host
-RUN addgroup --gid ${DOCKER_GID} docker
-
 # Install Docker Client
 RUN apt-get update && \
     apt-get install -y --no-install-recommends docker.io && \
     rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user for security
-RUN addgroup --system app && adduser --system --group app
+# Set the working directory
+WORKDIR /app
 
-# Add the 'app' user to our new 'docker' group
-RUN usermod -aG docker app
-
-WORKDIR /home/app
-
+# Copy installed packages from the builder stage
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /app/staticfiles /home/app/staticfiles
-COPY . .
-RUN chown -R app:app /home/app
 
-USER app
+# Copy collected static files from the builder stage
+COPY --from=builder /app/staticfiles /app/staticfiles
+
+# Copy project code
+COPY . .
+
+# NOTE: The user creation, usermod, and chown commands have been removed.
+# The container will now run as the default 'root' user.
 
 EXPOSE 8000
 
-CMD ["gunicorn", "OJ_project.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "OJ_project.wsgi:application", "--bind", "0.0.0.0:8000", "--log-level=debug"]
