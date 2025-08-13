@@ -96,10 +96,14 @@
     </div>
   </div>
 </div>
+{% endblock content %}
 
-<!-- ACE Editor & JavaScript -->
+
+<!-- This is the crucial change: The entire script section is moved into the 'scripts' block -->
+{% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
 <script>
+    // This script will now load AFTER the main Bootstrap JS from base.html
     var editor = ace.edit("editor");
     editor.setTheme("ace/theme/monokai");
     editor.session.setMode("ace/mode/python");
@@ -202,6 +206,7 @@
     // --- FULLY UPDATED HISTORY LOGIC ---
     const historyBtn = document.getElementById('history-btn');
     const historyTableBody = document.getElementById('history-table-body');
+    // This line will no longer cause an error because Bootstrap JS is already loaded
     const historyModal = new bootstrap.Modal(document.getElementById('historyModal'));
 
     historyBtn.addEventListener('click', function() {
@@ -216,7 +221,6 @@
             }
             data.forEach(sub => {
                 let statusClass = sub.status === 'Accepted' ? 'text-success' : 'text-danger';
-                // Add a data-id attribute to make the row identifiable
                 let row = `<tr class="submission-row" data-id="${sub.id}" style="cursor: pointer;">
                                <td><strong class="${statusClass}">${sub.status}</strong></td>
                                <td>${sub.language}</td>
@@ -231,7 +235,7 @@
         });
     });
 
-    // This is the crucial event listener that was missing
+    // This is the event listener that makes the history interactive
     historyTableBody.addEventListener('click', function(event) {
         const row = event.target.closest('.submission-row');
         if (!row) return;
@@ -262,4 +266,4 @@
         });
     });
 </script>
-{% endblock content %}
+{% endblock scripts %}
