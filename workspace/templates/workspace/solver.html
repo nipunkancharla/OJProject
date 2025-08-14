@@ -216,7 +216,6 @@
             }
             data.forEach(sub => {
                 let statusClass = sub.status === 'Accepted' ? 'text-success' : 'text-danger';
-                // Add a data-id attribute to make the row identifiable
                 let row = `<tr class="submission-row" data-id="${sub.id}" style="cursor: pointer;">
                                <td><strong class="${statusClass}">${sub.status}</strong></td>
                                <td>${sub.language}</td>
@@ -231,7 +230,6 @@
         });
     });
 
-    // This is the crucial event listener that was missing
     historyTableBody.addEventListener('click', function(event) {
         const row = event.target.closest('.submission-row');
         if (!row) return;
